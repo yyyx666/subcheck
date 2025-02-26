@@ -16,8 +16,8 @@ const (
 
 // LocalSaver 处理本地文件保存的结构体
 type LocalSaver struct {
-	basePath   string
-	outputPath string
+	BasePath   string
+	OutputPath string
 }
 
 // NewLocalSaver 创建新的本地保存器
@@ -29,8 +29,8 @@ func NewLocalSaver() (*LocalSaver, error) {
 
 	outputPath := filepath.Join(basePath, outputDirName)
 	return &LocalSaver{
-		basePath:   basePath,
-		outputPath: outputPath,
+		BasePath:   basePath,
+		OutputPath: outputPath,
 	}, nil
 }
 
@@ -57,7 +57,7 @@ func (ls *LocalSaver) Save(yamlData []byte, filename string) error {
 	}
 
 	// 构建文件路径并保存
-	filepath := filepath.Join(ls.outputPath, filename)
+	filepath := filepath.Join(ls.OutputPath, filename)
 
 	if err := os.WriteFile(filepath, yamlData, fileMode); err != nil {
 		return fmt.Errorf("写入文件失败 [%s]: %w", filename, err)
@@ -68,9 +68,9 @@ func (ls *LocalSaver) Save(yamlData []byte, filename string) error {
 
 // ensureOutputDir 确保输出目录存在
 func (ls *LocalSaver) ensureOutputDir() error {
-	if _, err := os.Stat(ls.outputPath); os.IsNotExist(err) {
-		if err := os.MkdirAll(ls.outputPath, dirMode); err != nil {
-			return fmt.Errorf("创建目录失败 [%s]: %w", ls.outputPath, err)
+	if _, err := os.Stat(ls.OutputPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(ls.OutputPath, dirMode); err != nil {
+			return fmt.Errorf("创建目录失败 [%s]: %w", ls.OutputPath, err)
 		}
 	}
 	return nil

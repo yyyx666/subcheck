@@ -10,8 +10,10 @@ import (
 	"github.com/bestruirui/mihomo-check/check"
 	"github.com/bestruirui/mihomo-check/config"
 	"github.com/bestruirui/mihomo-check/save"
+	"github.com/bestruirui/mihomo-check/save/method"
 	"github.com/bestruirui/mihomo-check/utils"
 	"github.com/fsnotify/fsnotify"
+	"github.com/gin-gonic/gin"
 	"github.com/metacubex/mihomo/log"
 	"gopkg.in/yaml.v3"
 )
@@ -53,6 +55,11 @@ func (app *App) Initialize() error {
 	}
 
 	app.interval = config.GlobalConfig.CheckInterval
+
+	if err := app.initHttpServer(); err != nil {
+		return fmt.Errorf("初始化HTTP服务器失败: %w", err)
+	}
+
 	return nil
 }
 
@@ -81,7 +88,7 @@ func (app *App) loadConfig() error {
 		return fmt.Errorf("读取配置文件失败: %w", err)
 	}
 
-	if err := yaml.Unmarshal(yamlFile, &config.GlobalConfig); err != nil {
+	if err := yaml.Unmarshal(yamlFile, config.GlobalConfig); err != nil {
 		return fmt.Errorf("解析配置文件失败: %w", err)
 	}
 
@@ -153,6 +160,24 @@ func (app *App) initConfigWatcher() error {
 	}
 
 	log.Infoln("配置文件监听已启动")
+	return nil
+}
+
+// initHttpServer 初始化HTTP服务器
+func (app *App) initHttpServer() error {
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.Default()
+	saver, err := method.NewLocalSaver()
+	if err != nil {
+		return fmt.Errorf("获取http监听目录失败: %w", err)
+	}
+	router.Static("/", saver.OutputPath)
+	go func() {
+		if err := router.Run(config.GlobalConfig.ListenPort); err != nil {
+			log.Errorln("HTTP服务器启动失败: %v", err)
+		}
+	}()
+	log.Infoln("HTTP服务器已启动，监听端口: %v", config.GlobalConfig.ListenPort)
 	return nil
 }
 
