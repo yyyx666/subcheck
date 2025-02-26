@@ -9,31 +9,16 @@ import (
 
 // 将vless格式的节点转换为clash的节点
 func ParseVless(data string) (map[string]any, error) {
+	parsedURL, err := url.Parse(data)
+	if err != nil {
+		return nil, fmt.Errorf("解析失败: %v", err)
+	}
 
-	if !strings.HasPrefix(data, "vless://") {
+	if parsedURL.Scheme != "vless" {
 		return nil, fmt.Errorf("不是vless格式")
 	}
 
-	// 移除 "vless://" 前缀
-	data = strings.TrimPrefix(data, "vless://")
-
-	// 分离用户信息和服务器信息
-	parts := strings.SplitN(data, "@", 2)
-	if len(parts) != 2 {
-		return nil, nil
-	}
-
-	uuid := parts[0]
-	remaining := parts[1]
-
-	// 分离服务器地址和参数
-	hostAndParams := strings.SplitN(remaining, "?", 2)
-	if len(hostAndParams) != 2 {
-		return nil, nil
-	}
-
-	// 分离服务器地址和端口
-	hostPort := strings.Split(hostAndParams[0], ":")
+	hostPort := strings.Split(parsedURL.Host, ":")
 	if len(hostPort) != 2 {
 		return nil, nil
 	}
@@ -45,28 +30,23 @@ func ParseVless(data string) (map[string]any, error) {
 	}
 
 	// 解析参数
-	params, err := url.ParseQuery(hostAndParams[1])
+	params, err := url.ParseQuery(parsedURL.RawQuery)
 	if err != nil {
 		return nil, nil
 	}
 
-	// 提取节点名称
-	name := ""
-	if idx := strings.LastIndex(data, "#"); idx != -1 {
-		name = data[idx+1:]
-		name, _ = url.QueryUnescape(name)
-	}
-
 	// 构建 clash 格式的代理配置
 	proxy := map[string]any{
-		"name":       name,
-		"type":       "vless",
-		"server":     host,
-		"port":       port,
-		"uuid":       uuid,
-		"network":    params.Get("type"),
-		"tls":        params.Get("security") == "tls",
-		"servername": params.Get("sni"),
+		"name":        parsedURL.Fragment,
+		"type":        "vless",
+		"server":      host,
+		"port":        port,
+		"uuid":        parsedURL.User.String(),
+		"network":     params.Get("type"),
+		"tls":         params.Get("security") == "tls",
+		"servername":  params.Get("sni"),
+		"flow":        params.Get("flow"),
+		"fingerprint": params.Get("fp"),
 	}
 
 	// 添加 ws 特定配置
@@ -79,6 +59,11 @@ func ParseVless(data string) (map[string]any, error) {
 		}
 		proxy["ws-opts"] = wsOpts
 	}
+	realityOpts := map[string]any{
+		"public-key": params.Get("pbk"),
+		"short-id":   params.Get("sid"),
+	}
+	proxy["reality-opts"] = realityOpts
 
 	return proxy, nil
 }

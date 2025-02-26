@@ -198,7 +198,7 @@ func genUrls(data []byte) (string, error) {
 			keyStr := string(key)
 			// 跳过已处理的基本字段
 			switch keyStr {
-			case "type", "password", "server", "port", "name":
+			case "type", "password", "server", "port", "name", "uuid":
 				return nil
 			}
 			// 如果val是对象，则递归解析
