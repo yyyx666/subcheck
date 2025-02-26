@@ -1,11 +1,17 @@
 package save
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"net/url"
+	"strconv"
+	"strings"
 
 	"github.com/bestruirui/mihomo-check/check"
 	"github.com/bestruirui/mihomo-check/config"
 	"github.com/bestruirui/mihomo-check/save/method"
+	"github.com/buger/jsonparser"
 	"github.com/metacubex/mihomo/log"
 	"gopkg.in/yaml.v3"
 )
@@ -78,6 +84,12 @@ func (cs *ConfigSaver) Save() error {
 			log.Errorln("保存 %s 类别失败: %v", category.Name, err)
 			continue
 		}
+
+		category.Name = strings.TrimSuffix(category.Name, ".yaml") + ".txt"
+		if err := cs.saveCategoryBase64(category); err != nil {
+			log.Errorln("保存base64 %s 类别失败: %v", category.Name, err)
+			continue
+		}
 	}
 
 	return nil
@@ -104,13 +116,126 @@ func (cs *ConfigSaver) saveCategory(category ProxyCategory) error {
 		"proxies": category.Proxies,
 	})
 	if err != nil {
-		return fmt.Errorf("序列化 %s 失败: %w", category.Name, err)
+		return fmt.Errorf("序列化yaml %s 失败: %w", category.Name, err)
 	}
 	if err := cs.saveMethod(yamlData, category.Name); err != nil {
-		return fmt.Errorf("保存 %s 失败: %w", category.Name, err)
+		return fmt.Errorf("保存yaml %s 失败: %w", category.Name, err)
 	}
 
 	return nil
+}
+
+// saveCategoryBase64 用base64保存单个类别的代理
+func (cs *ConfigSaver) saveCategoryBase64(category ProxyCategory) error {
+	if len(category.Proxies) == 0 {
+		log.Warnln("%s 节点为空，跳过", category.Name)
+		return nil
+	}
+
+	data, err := json.Marshal(category.Proxies)
+	if err != nil {
+		return fmt.Errorf("序列化base64 %s 失败: %w", category.Name, err)
+	}
+	urls, err := genUrls(data)
+	if err != nil {
+		return fmt.Errorf("生成urls %s 失败: %w", category.Name, err)
+	}
+
+	encoded := base64.StdEncoding.EncodeToString([]byte(urls))
+	if err := cs.saveMethod([]byte(encoded), category.Name); err != nil {
+		return fmt.Errorf("保存base64 %s 失败: %w", category.Name, err)
+	}
+
+	return nil
+}
+
+// 生成类似urls
+// hysteria2://b82f14be-9225-48cb-963e-0350c86c31d3@us2.interld123456789.com:32000/?insecure=1&sni=234224.1234567890spcloud.com&mport=32000-33000#美国hy2-2-联通电信
+// hysteria2://b82f14be-9225-48cb-963e-0350c86c31d3@sg1.interld123456789.com:32000/?insecure=1&sni=234224.1234567890spcloud.com&mport=32000-33000#新加坡hy2-1-移动优化
+func genUrls(data []byte) (string, error) {
+	var urls string
+	var parseErr error
+
+	_, err := jsonparser.ArrayEach(data, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+		if err != nil {
+			return
+		}
+
+		// 获取必需字段
+		t, err := jsonparser.GetString(value, "type")
+		if err != nil {
+			parseErr = fmt.Errorf("获取type字段失败: %w", err)
+			return
+		}
+		password, err := jsonparser.GetString(value, "password")
+		if err != nil {
+			if err == jsonparser.KeyPathNotFoundError {
+				password, _ = jsonparser.GetString(value, "uuid")
+			} else {
+				parseErr = fmt.Errorf("获取password/uuid字段失败: %w", err)
+				return
+			}
+		}
+		server, err := jsonparser.GetString(value, "server")
+		if err != nil {
+			parseErr = fmt.Errorf("获取server字段失败: %w", err)
+			return
+		}
+		port, err := jsonparser.GetInt(value, "port")
+		if err != nil {
+			parseErr = fmt.Errorf("获取port字段失败: %w", err)
+			return
+		}
+		name, err := jsonparser.GetString(value, "name")
+		if err != nil {
+			parseErr = fmt.Errorf("获取name字段失败: %w", err)
+			return
+		}
+
+		// 设置查询参数
+		q := url.Values{}
+		err = jsonparser.ObjectEach(value, func(key []byte, val []byte, dataType jsonparser.ValueType, offset int) error {
+			keyStr := string(key)
+			// 跳过已处理的基本字段
+			switch keyStr {
+			case "type", "password", "server", "port", "name":
+				return nil
+			}
+			// 如果val是对象，则递归解析
+			if dataType == jsonparser.Object {
+				return jsonparser.ObjectEach(val, func(key []byte, val []byte, dataType jsonparser.ValueType, offset int) error {
+					q.Set(string(key), string(val))
+					return nil
+				})
+			} else {
+				q.Set(keyStr, string(val))
+			}
+
+			return nil
+		})
+		if err != nil {
+			parseErr = fmt.Errorf("获取其他字段失败: %w", err)
+			return
+		}
+
+		u := url.URL{
+			Scheme:   t,
+			User:     url.User(password),
+			Host:     server + ":" + strconv.Itoa(int(port)),
+			RawQuery: q.Encode(),
+			Fragment: name,
+		}
+		urls += u.String() + "\n"
+	})
+
+	if err != nil {
+		return "", fmt.Errorf("解析代理配置转成urls时失败: %w", err)
+	}
+
+	// todo: 暂时在这里打印日志，不做返回错误，这样解析单个失败，不回导致全部失败
+	log.Debugln("解析字段错误：%v", parseErr)
+
+	return urls, nil
 }
 
 // chooseSaveMethod 根据配置选择保存方法
