@@ -93,8 +93,8 @@ func GetDateFromSubs(subUrl string) ([]byte, error) {
 			lastErr = err
 			continue
 		}
-
-		req.Header.Set("User-Agent", "clash.meta")
+		// 如果走clash，那么输出base64的时候还要更改每个类型的key，所以不能走，以后都走URI
+		// req.Header.Set("User-Agent", "clash.meta")
 
 		resp, err := client.Do(req)
 		if err != nil {

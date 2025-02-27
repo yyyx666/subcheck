@@ -47,7 +47,7 @@ func ParseVless(data string) (map[string]any, error) {
 		"ws-opts": map[string]any{
 			"path": query.Get("path"),
 			"headers": map[string]any{
-				"host": query.Get("host"),
+				"Host": query.Get("host"),
 			},
 		},
 		"reality-opts": map[string]any{
@@ -63,22 +63,6 @@ func ParseVless(data string) (map[string]any, error) {
 		"path":     query.Get("path"),
 		"host":     query.Get("host"),
 	}
-
-	// // 添加 ws 特定配置
-	// if query.Get("type") == "ws" {
-	// 	wsOpts := map[string]any{
-	// 		"path": query.Get("path"),
-	// 		"headers": map[string]any{
-	// 			"host": query.Get("host"),
-	// 		},
-	// 	}
-	// 	proxy["ws-opts"] = wsOpts
-	// }
-	// realityOpts := map[string]any{
-	// 	"public-key": query.Get("pbk"),
-	// 	"short-id":   query.Get("sid"),
-	// }
-	// proxy["reality-opts"] = realityOpts
 
 	return proxy, nil
 }

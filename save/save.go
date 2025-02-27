@@ -248,19 +248,46 @@ func genUrls(data []byte) (string, error) {
 				return nil
 			}
 
+			// 将clash的参数转换为url的参数
+			conversion := func(k, v string) {
+				switch k {
+				case "servername":
+					q.Set("sni", v)
+				case "client-fingerprint":
+					q.Set("fp", v)
+				case "public-key":
+					q.Set("pbk", v)
+				case "short-id":
+					q.Set("sid", v)
+				case "ports":
+					q.Set("mport", v)
+				case "skip-cert-verify":
+					if v == "true" {
+						q.Set("insecure", "1")
+						q.Set("allowInsecure", "1")
+					} else {
+						q.Set("insecure", "0")
+						q.Set("allowInsecure", "0")
+					}
+				case "Host":
+					q.Set("host", v)
+				default:
+					q.Set(k, v)
+				}
+			}
+
 			// 如果val是对象，则递归解析
 			if dataType == jsonparser.Object {
 				return jsonparser.ObjectEach(val, func(key []byte, val []byte, dataType jsonparser.ValueType, offset int) error {
 					// vless的特殊情况 headers {"host":"vn.oldcloud.online"}
 					// 前边处理过vless了，暂时保留，万一后边其他协议还需要
 					if dataType == jsonparser.Object {
-						// return jsonparser.ObjectEach(val, func(key []byte, val []byte, dataType jsonparser.ValueType, offset int) error {
-						// 	q.Set(string(key), string(val))
-						// 	return nil
-						// })
-						return nil
+						return jsonparser.ObjectEach(val, func(key []byte, val []byte, dataType jsonparser.ValueType, offset int) error {
+							conversion(string(key), string(val))
+							return nil
+						})
 					}
-					q.Set(string(key), string(val))
+					conversion(string(key), string(val))
 					return nil
 				})
 			} else {

@@ -216,7 +216,7 @@ func (pc *ProxyChecker) showProgress(done chan bool) {
 			current := atomic.LoadInt32(&pc.progress)
 			available := atomic.LoadInt32(&pc.available)
 
-			if available == 0 {
+			if pc.proxyCount == 0 {
 				time.Sleep(100 * time.Millisecond)
 				break
 			}

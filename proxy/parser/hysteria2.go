@@ -46,5 +46,8 @@ func ParseHysteria2(data string) (map[string]any, error) {
 		"obfs-password":    obfsPassword,
 		"sni":              sni,
 		"skip-cert-verify": insecureBool,
+		// 添加原配置
+		"insecure": insecure,
+		"mport":    query.Get("mport"),
 	}, nil
 }
