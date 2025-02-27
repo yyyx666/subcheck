@@ -115,8 +115,5 @@ func ParseVmess(data string) (map[string]any, error) {
 		proxy["alpn"] = strings.Split(vmessInfo.Alpn, ",")
 	}
 
-	json, _ := json.Marshal(proxy)
-	slog.Debug(fmt.Sprintf("vmess解析结果: %s", string(json)))
-
 	return proxy, nil
 }

@@ -25,7 +25,7 @@ func GetProxies() ([]map[string]any, error) {
 		if err != nil {
 			return nil, err
 		}
-		slog.Debug(fmt.Sprintf("获取订阅链接: %s，数据: %s", subUrl, string(data)))
+		slog.Debug(fmt.Sprintf("获取订阅链接: %s，数据长度: %d", subUrl, len(data)))
 		var config map[string]any
 		err = yaml.Unmarshal(data, &config)
 		if err != nil {

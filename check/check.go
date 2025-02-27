@@ -144,7 +144,7 @@ func (pc *ProxyChecker) checkProxy(proxy map[string]any) *Result {
 	}
 
 	if os.Getenv("SUB_CHECK_SKIP") == "true" {
-		slog.Debug(fmt.Sprintf("跳过检测代理: %v", proxy["name"]))
+		// slog.Debug(fmt.Sprintf("跳过检测代理: %v", proxy["name"]))
 		return res
 	}
 
@@ -261,6 +261,7 @@ func (pc *ProxyChecker) collectResults() {
 func CreateClient(mapping map[string]any) *http.Client {
 	proxy, err := adapter.ParseProxy(mapping)
 	if err != nil {
+		slog.Debug(fmt.Sprintf("底层mihomo创建代理Client失败: %v", err))
 		return nil
 	}
 
