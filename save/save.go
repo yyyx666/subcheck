@@ -67,9 +67,25 @@ func NewConfigSaver(results []check.Result) *ConfigSaver {
 
 // SaveConfig 保存配置的入口函数
 func SaveConfig(results []check.Result) {
-	saver := NewConfigSaver(results)
-	if err := saver.Save(); err != nil {
-		log.Errorln("保存配置失败: %v", err)
+	tmp := config.GlobalConfig.SaveMethod
+	config.GlobalConfig.SaveMethod = "local"
+	{
+		// 奇技淫巧，保存到本地一份，因为我没想道其他更好的方法同时保存
+		saver := NewConfigSaver(results)
+		if err := saver.Save(); err != nil {
+			log.Errorln("保存配置失败: %v", err)
+		}
+	}
+
+	if tmp == "local" {
+		return
+	}
+	config.GlobalConfig.SaveMethod = tmp
+	{
+		saver := NewConfigSaver(results)
+		if err := saver.Save(); err != nil {
+			log.Errorln("保存配置失败: %v", err)
+		}
 	}
 }
 
@@ -109,7 +125,7 @@ func (cs *ConfigSaver) categorizeProxies() {
 // saveCategory 保存单个类别的代理
 func (cs *ConfigSaver) saveCategory(category ProxyCategory) error {
 	if len(category.Proxies) == 0 {
-		log.Warnln("%s 节点为空，跳过", category.Name)
+		log.Warnln("%s 节点为空，跳过保存到 %v", category.Name, config.GlobalConfig.SaveMethod)
 		return nil
 	}
 	yamlData, err := yaml.Marshal(map[string]any{
@@ -128,7 +144,7 @@ func (cs *ConfigSaver) saveCategory(category ProxyCategory) error {
 // saveCategoryBase64 用base64保存单个类别的代理
 func (cs *ConfigSaver) saveCategoryBase64(category ProxyCategory) error {
 	if len(category.Proxies) == 0 {
-		log.Warnln("%s 节点为空，跳过", category.Name)
+		log.Warnln("%s 节点为空，跳过保存到 %v", category.Name, config.GlobalConfig.SaveMethod)
 		return nil
 	}
 
