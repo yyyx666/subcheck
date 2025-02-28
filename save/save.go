@@ -234,11 +234,7 @@ func genUrls(data []byte) (string, error) {
 		q := url.Values{}
 
 		// 检测vless 如果开了tls，则设置security为tls,后边如果发现有sid字段，则设置security为reality
-		tls, err := jsonparser.GetBoolean(value, "tls")
-		if err != nil {
-			slog.Debug(fmt.Sprintf("获取name字段失败: %s", err))
-			return
-		}
+		tls, _ := jsonparser.GetBoolean(value, "tls")
 		if tls {
 			q.Set("security", "tls")
 		}
