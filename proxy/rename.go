@@ -46,6 +46,14 @@ type Counter struct {
 	ir int32
 	// 意大利
 	it int32
+	// 芬兰
+	fi int32
+	// 柬埔寨
+	kh int32
+	// 巴西
+	br int32
+	// 印度
+	in int32
 	// 其他
 	other int32
 }
@@ -84,7 +92,7 @@ func Rename(name string) string {
 		return "🇯🇵日本" + strconv.Itoa(int(atomic.LoadInt32(&counter.jp)))
 	}
 	// 英国
-	if regexp.MustCompile(`(?i)(uk|英|united kingdom|britain)`).MatchString(name) {
+	if regexp.MustCompile(`(?i)(uk|英|united kingdom|britain|gb)`).MatchString(name) {
 		atomic.AddInt32(&counter.uk, 1)
 		return "🇬🇧英国" + strconv.Itoa(int(atomic.LoadInt32(&counter.uk)))
 	}
@@ -152,6 +160,26 @@ func Rename(name string) string {
 	if regexp.MustCompile(`(?i)(it|意|italy)`).MatchString(name) {
 		atomic.AddInt32(&counter.it, 1)
 		return "🇮🇹意大利" + strconv.Itoa(int(atomic.LoadInt32(&counter.it)))
+	}
+	// 芬兰
+	if regexp.MustCompile(`(?i)(fi|芬|finland)`).MatchString(name) {
+		atomic.AddInt32(&counter.fi, 1)
+		return "🇫🇮芬兰" + strconv.Itoa(int(atomic.LoadInt32(&counter.fi)))
+	}
+	// 柬埔寨
+	if regexp.MustCompile(`(?i)(kh|柬|cambodia)`).MatchString(name) {
+		atomic.AddInt32(&counter.kh, 1)
+		return "🇰🇭柬埔寨" + strconv.Itoa(int(atomic.LoadInt32(&counter.kh)))
+	}
+	// 巴西
+	if regexp.MustCompile(`(?i)(br|巴|brazil)`).MatchString(name) {
+		atomic.AddInt32(&counter.br, 1)
+		return "🇧🇷巴西" + strconv.Itoa(int(atomic.LoadInt32(&counter.br)))
+	}
+	// 印度
+	if regexp.MustCompile(`(?i)(in|印|india)`).MatchString(name) {
+		atomic.AddInt32(&counter.in, 1)
+		return "🇮🇳印度" + strconv.Itoa(int(atomic.LoadInt32(&counter.in)))
 	}
 	// 其他
 	atomic.AddInt32(&counter.other, 1)

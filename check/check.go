@@ -90,7 +90,7 @@ func (pc *ProxyChecker) run(proxies []map[string]any) ([]Result, error) {
 		wg.Add(1)
 		go pc.worker(&wg)
 	}
-	slog.Debug(fmt.Sprintf("启动工作线程: %d", pc.threadCount))
+	slog.Info(fmt.Sprintf("启动工作线程: %d", pc.threadCount))
 
 	// 发送任务
 	go pc.distributeProxies(proxies)
@@ -109,7 +109,7 @@ func (pc *ProxyChecker) run(proxies []map[string]any) ([]Result, error) {
 
 	// 等待结果收集完成
 	collectWg.Wait()
-	slog.Debug(fmt.Sprintf("结果收集完成"))
+	slog.Debug("结果收集完成")
 	// 等待进度条显示完成
 	time.Sleep(100 * time.Millisecond)
 

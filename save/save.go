@@ -178,6 +178,11 @@ func genUrls(data []byte) (string, error) {
 		if err != nil {
 			return
 		}
+		name, err := jsonparser.GetString(value, "name")
+		if err != nil {
+			slog.Debug(fmt.Sprintf("获取name字段失败: %s", err))
+			return
+		}
 
 		// 获取必需字段
 		t, err := jsonparser.GetString(value, "type")
@@ -191,6 +196,12 @@ func genUrls(data []byte) (string, error) {
 			raw, _, _, err := jsonparser.Get(value, "raw")
 			if err != nil {
 				slog.Debug(fmt.Sprintf("获取raw字段失败: %s", err))
+				return
+			}
+			// 因为vmess是json格式，前边的重命名对这里边不起作用，这里单独处理
+			raw, err = jsonparser.Set(raw, []byte(fmt.Sprintf(`"%s"`, name)), "ps")
+			if err != nil {
+				slog.Debug(fmt.Sprintf("修改vmess ps字段失败: %s", err))
 				return
 			}
 			urls += "vmess://" + base64.StdEncoding.EncodeToString(raw) + "\n"
@@ -222,11 +233,6 @@ func genUrls(data []byte) (string, error) {
 		port, err := jsonparser.GetInt(value, "port")
 		if err != nil {
 			slog.Debug(fmt.Sprintf("获取port字段失败: %s", err))
-			return
-		}
-		name, err := jsonparser.GetString(value, "name")
-		if err != nil {
-			slog.Debug(fmt.Sprintf("获取name字段失败: %s", err))
 			return
 		}
 

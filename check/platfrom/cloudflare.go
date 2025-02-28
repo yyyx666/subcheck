@@ -1,7 +1,6 @@
 package platfrom
 
 import (
-	"fmt"
 	"net/http"
 
 	"log/slog"
@@ -30,9 +29,9 @@ func checkCloudflareEndpoint(httpClient *http.Client, url string, statusCode int
 	// 发送请求
 	resp, err := httpClient.Do(req)
 	if err != nil {
+		slog.Debug(err.Error())
 		return false, err
 	}
 	defer resp.Body.Close()
-	slog.Debug(fmt.Sprintf("CheckCloudflare resp.StatusCode: %d, url: %s", resp.StatusCode, url))
 	return resp.StatusCode == statusCode, nil
 }
