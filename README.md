@@ -89,6 +89,10 @@ go run main.go -f /path/to/config.yaml
 - `http://127.0.0.1:8199/all.yaml` 返回yaml格式节点
 - `http://127.0.0.1:8199/all.txt` 返回base64格式节点
 
+可以直接将base64格式订阅放到V2rayN中
+![subset](./doc/images/subset.jpeg)
+![nodeinfo](./doc/images/nodeinfo.jpeg)
+
 ## 订阅使用方法
 
 推荐直接裸核运行 tun 模式 
