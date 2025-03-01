@@ -54,6 +54,10 @@ type Counter struct {
 	br int32
 	// 印度
 	in int32
+	// 阿拉伯酋长国
+	ae int32
+	// 瑞士
+	ch int32
 	// 其他
 	other int32
 }
@@ -180,6 +184,16 @@ func Rename(name string) string {
 	if regexp.MustCompile(`(?i)(in|印|india)`).MatchString(name) {
 		atomic.AddInt32(&counter.in, 1)
 		return "🇮🇳印度" + strconv.Itoa(int(atomic.LoadInt32(&counter.in)))
+	}
+	// 阿拉伯酋长国
+	if regexp.MustCompile(`(?i)(ae|阿|uae|阿拉伯酋长国)`).MatchString(name) {
+		atomic.AddInt32(&counter.ae, 1)
+		return "🇦🇪阿拉伯酋长国" + strconv.Itoa(int(atomic.LoadInt32(&counter.ae)))
+	}
+	// 瑞士
+	if regexp.MustCompile(`(?i)(ch|瑞|switzerland)`).MatchString(name) {
+		atomic.AddInt32(&counter.ch, 1)
+		return "🇨🇭瑞士" + strconv.Itoa(int(atomic.LoadInt32(&counter.ch)))
 	}
 	// 其他
 	atomic.AddInt32(&counter.other, 1)

@@ -194,7 +194,7 @@ func (pc *ProxyChecker) updateProxyName(proxy map[string]any, client *http.Clien
 	}
 	// 以节点IP查询位置重命名节点
 	if config.GlobalConfig.RenameNode {
-		country := proxyutils.GetProxyCountry(client)
+		country := proxyutils.GetProxyCountry(httpClient)
 		if country == "" {
 			country = "未识别"
 		}
@@ -289,7 +289,7 @@ func CreateClient(mapping map[string]any) *http.Client {
 					DstPort: u16Port,
 				})
 			},
-			// 设置连接超时
+			// 设置空闲连接超时
 			IdleConnTimeout: time.Duration(config.GlobalConfig.Timeout) * time.Millisecond,
 			// 关闭keepalive
 			DisableKeepAlives: true,
