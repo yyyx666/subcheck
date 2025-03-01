@@ -80,6 +80,8 @@ func Check() ([]Result, error) {
 // Run 运行检测流程
 func (pc *ProxyChecker) run(proxies []map[string]any) ([]Result, error) {
 	slog.Info("开始检测节点")
+	slog.Info(fmt.Sprintf("启动工作线程: %d", pc.threadCount))
+
 	done := make(chan bool)
 	if config.GlobalConfig.PrintProgress {
 		go pc.showProgress(done)
@@ -90,7 +92,6 @@ func (pc *ProxyChecker) run(proxies []map[string]any) ([]Result, error) {
 		wg.Add(1)
 		go pc.worker(&wg)
 	}
-	slog.Info(fmt.Sprintf("启动工作线程: %d", pc.threadCount))
 
 	// 发送任务
 	go pc.distributeProxies(proxies)

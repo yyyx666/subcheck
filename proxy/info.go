@@ -23,11 +23,11 @@ func GetProxyCountry(httpClient *http.Client) string {
 
 		resp, err := httpClient.Do(req)
 		if err != nil {
+			slog.Debug(fmt.Sprintf("获取节点位置失败: %s", err))
 			time.Sleep(time.Second * time.Duration(attempts))
 			continue
 		}
 		defer resp.Body.Close()
-		slog.Debug(fmt.Sprintf("获取节点位置返回码: %d, url: %s", resp.StatusCode, url))
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {

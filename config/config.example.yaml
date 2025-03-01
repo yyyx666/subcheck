@@ -64,6 +64,9 @@ worker-token: 1234567890
 sub-urls-retry: 3
 
 # 订阅地址 支持 clash/mihomo/v2ray/base64 格式的订阅链接
+# 如果用户想使用clash类型，那可以在支持的订阅链接结尾加上 &flag=clash.meta
 sub-urls:
   - https://example.com/sub.txt
   - https://example.com/sub2.txt
+  - https://example.com/sub?token=43fa8f0dc9bb00dcfec2afb21b14378a
+  - https://example.com/sub?token=43fa8f0dc9bb00dcfec2afb21b14378a?flag=clash.meta
