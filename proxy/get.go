@@ -1,6 +1,7 @@
 package proxies
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"net/http"
@@ -36,9 +37,13 @@ func GetProxies() ([]map[string]any, error) {
 				data = []byte(parser.DecodeBase64(string(data)))
 			}
 			if reg.Match(data) {
-				proxies := strings.Split(string(data), "\n")
-
-				for _, proxy := range proxies {
+				// 使用 bufio.Scanner 逐行处理数据
+				scanner := bufio.NewScanner(strings.NewReader(string(data)))
+				for scanner.Scan() {
+					proxy := scanner.Text()
+					if proxy == "" {
+						continue
+					}
 					parseProxy, err := ParseProxy(proxy)
 					if err != nil {
 						slog.Debug(fmt.Sprintf("解析proxy错误: %s , %v", proxy, err))
@@ -49,6 +54,9 @@ func GetProxies() ([]map[string]any, error) {
 						continue
 					}
 					mihomoProxies = append(mihomoProxies, parseProxy)
+				}
+				if err := scanner.Err(); err != nil {
+					slog.Error(fmt.Sprintf("扫描数据时发生错误: %v", err))
 				}
 				// 跳出当前订阅
 				continue

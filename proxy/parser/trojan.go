@@ -75,14 +75,14 @@ func ParseTrojan(data string) (map[string]any, error) {
 			"path": params.Get("path"),
 		}
 		if host := params.Get("host"); host != "" {
-			wsOpts["headers"] = map[string]any{
+			wsOpts["headers"] = map[string]string{
 				"Host": host,
 			}
 		}
 		proxy["ws-opts"] = wsOpts
 	case "grpc":
 		if serviceName := params.Get("serviceName"); serviceName != "" {
-			proxy["grpc-opts"] = map[string]any{
+			proxy["grpc-opts"] = map[string]string{
 				"serviceName": serviceName,
 			}
 		}

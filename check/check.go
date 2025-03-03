@@ -157,22 +157,24 @@ func (pc *ProxyChecker) checkProxy(proxy map[string]any) *Result {
 		return res
 	}
 
-	cloudflare, err := platfrom.CheckCloudflare(httpClient)
+	cloudflare, err := platfrom.CheckCloudflare(httpClient.Client)
 	if err != nil || !cloudflare {
 		return nil
 	}
 
-	google, err := platfrom.CheckGoogle(httpClient)
+	google, err := platfrom.CheckGoogle(httpClient.Client)
 	if err != nil || !google {
 		return nil
 	}
 	var speed int
 	if config.GlobalConfig.SpeedTestUrl != "" {
-		speed, err = platfrom.CheckSpeed(httpClient)
+		speed, err = platfrom.CheckSpeed(httpClient.Client)
 		if err != nil || speed < config.GlobalConfig.MinSpeed {
 			return nil
 		}
 	}
+	// 及时的关闭，减少内存使用
+	httpClient.Close()
 	// 执行其他平台检测
 	// openai, _ := platfrom.CheckOpenai(httpClient)
 	// youtube, _ := platfrom.CheckYoutube(httpClient)
@@ -180,7 +182,7 @@ func (pc *ProxyChecker) checkProxy(proxy map[string]any) *Result {
 	// disney, _ := platfrom.CheckDisney(httpClient)
 
 	// 更新代理名称
-	pc.updateProxyName(proxy, httpClient, speed)
+	pc.updateProxyName(proxy, speed)
 	pc.incrementAvailable()
 
 	res.Cloudflare = cloudflare
@@ -193,7 +195,7 @@ func (pc *ProxyChecker) checkProxy(proxy map[string]any) *Result {
 }
 
 // updateProxyName 更新代理名称
-func (pc *ProxyChecker) updateProxyName(proxy map[string]any, client *http.Client, speed int) {
+func (pc *ProxyChecker) updateProxyName(proxy map[string]any, speed int) {
 	// hy2协议 不知道为什么在被前边测速后就脏了，就不能用了，我也不知道为什么，奇葩。
 	// 可能底层mihomo的bug，什么泄露之类的，请求任何网址都超时。所以这里创新创建一个client
 	httpClient := CreateClient(proxy)
@@ -201,9 +203,10 @@ func (pc *ProxyChecker) updateProxyName(proxy map[string]any, client *http.Clien
 		slog.Debug(fmt.Sprintf("创建updateProxyName代理Client失败: %v", proxy["name"]))
 		return
 	}
+	defer httpClient.Close()
 	// 以节点IP查询位置重命名节点
 	if config.GlobalConfig.RenameNode {
-		country := proxyutils.GetProxyCountry(httpClient)
+		country := proxyutils.GetProxyCountry(httpClient.Client)
 		if country == "" {
 			country = "未识别"
 		}
@@ -274,34 +277,50 @@ func (pc *ProxyChecker) collectResults() {
 	}
 }
 
-func CreateClient(mapping map[string]any) *http.Client {
+// CreateClient creates and returns an http.Client with a Close function
+type ProxyClient struct {
+	*http.Client
+}
+
+func CreateClient(mapping map[string]any) *ProxyClient {
 	proxy, err := adapter.ParseProxy(mapping)
 	if err != nil {
 		slog.Debug(fmt.Sprintf("底层mihomo创建代理Client失败: %v", err))
 		return nil
 	}
 
-	return &http.Client{
-		Timeout: time.Duration(config.GlobalConfig.Timeout) * time.Millisecond,
-		Transport: &http.Transport{
-			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				host, port, err := net.SplitHostPort(addr)
-				if err != nil {
-					return nil, err
-				}
-				var u16Port uint16
-				if port, err := strconv.ParseUint(port, 10, 16); err == nil {
-					u16Port = uint16(port)
-				}
-				return proxy.DialContext(ctx, &constant.Metadata{
-					Host:    host,
-					DstPort: u16Port,
-				})
-			},
-			// 设置空闲连接超时
-			IdleConnTimeout: time.Duration(config.GlobalConfig.Timeout) * time.Millisecond,
-			// 关闭keepalive
-			DisableKeepAlives: true,
+	transport := &http.Transport{
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			host, port, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+			var u16Port uint16
+			if port, err := strconv.ParseUint(port, 10, 16); err == nil {
+				u16Port = uint16(port)
+			}
+			return proxy.DialContext(ctx, &constant.Metadata{
+				Host:    host,
+				DstPort: u16Port,
+			})
 		},
+		IdleConnTimeout:   time.Duration(config.GlobalConfig.Timeout) * time.Millisecond,
+		DisableKeepAlives: true,
+	}
+
+	return &ProxyClient{
+		Client: &http.Client{
+			Timeout:   time.Duration(config.GlobalConfig.Timeout) * time.Millisecond,
+			Transport: transport,
+		},
+	}
+}
+
+// Close closes the proxy client and cleans up resources
+func (pc *ProxyClient) Close() {
+	if pc != nil {
+		if transport, ok := pc.Transport.(*http.Transport); ok {
+			transport.CloseIdleConnections()
+		}
 	}
 }

@@ -98,13 +98,13 @@ func ParseVmess(data string) (map[string]any, error) {
 			"path": vmessInfo.Path,
 		}
 		if vmessInfo.Host != "" {
-			wsOpts["headers"] = map[string]any{
+			wsOpts["headers"] = map[string]string{
 				"Host": vmessInfo.Host,
 			}
 		}
 		proxy["ws-opts"] = wsOpts
 	case "grpc":
-		grpcOpts := map[string]any{
+		grpcOpts := map[string]string{
 			"serviceName": vmessInfo.Path,
 		}
 		proxy["grpc-opts"] = grpcOpts

@@ -46,15 +46,15 @@ func ParseVless(data string) (map[string]any, error) {
 		"client-fingerprint": query.Get("fp"),
 		"ws-opts": map[string]any{
 			"path": query.Get("path"),
-			"headers": map[string]any{
+			"headers": map[string]string{
 				"Host": query.Get("host"),
 			},
 		},
-		"reality-opts": map[string]any{
+		"reality-opts": map[string]string{
 			"public-key": query.Get("pbk"),
 			"short-id":   query.Get("sid"),
 		},
-		"grpc-opts": map[string]any{
+		"grpc-opts": map[string]string{
 			"grpc-service-name": query.Get("serviceName"),
 		},
 		// 给 URI使用，Clash 的 参数不叫这个

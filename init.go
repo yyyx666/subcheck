@@ -2,6 +2,8 @@ package main
 
 import (
 	"log/slog"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"strings"
 
@@ -26,6 +28,16 @@ func init() {
 
 	// 设置为全局日志记录器
 	slog.SetDefault(logger)
+
+	if strings.ToLower(os.Getenv("SUBS_CHECK_PPROF")) != "" {
+		// 在调试模式下启动 pprof 服务器
+		go func() {
+			slog.Info("Starting pprof server on localhost:8299")
+			if err := http.ListenAndServe("localhost:8299", nil); err != nil {
+				slog.Error("Failed to start pprof server", "error", err)
+			}
+		}()
+	}
 }
 
 func getLogLevel() slog.Level {
