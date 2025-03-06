@@ -15,7 +15,7 @@ import (
 	"github.com/beck-8/subs-check/config"
 	"github.com/beck-8/subs-check/save/method"
 	"github.com/buger/jsonparser"
-	"github.com/goccy/go-yaml"
+	"gopkg.in/yaml.v3"
 )
 
 // ProxyCategory 定义代理分类

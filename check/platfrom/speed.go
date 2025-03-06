@@ -27,35 +27,13 @@ func CheckSpeed(httpClient *http.Client) (int, error) {
 	}
 	defer resp.Body.Close()
 
-	buffer := make([]byte, 32*1024) // 32KB 缓冲区
-	totalBytes := 0
-	var startTime time.Time
-	firstRead := true
+	var totalBytes int64
+	startTime := time.Now()
 
-	for {
-		n, err := resp.Body.Read(buffer)
-		if firstRead && n > 0 {
-			startTime = time.Now()
-			firstRead = false
-		}
-		totalBytes += n
-
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			// 如果是其他错误，且已经读取了一些数据，我们仍然可以计算速度
-			if totalBytes > 0 {
-				break
-			}
-			slog.Debug(fmt.Sprintf("读取数据时发生错误: %v", err))
-			return 0, err
-		}
-	}
-
-	// 如果没有读取到任何数据
-	if firstRead {
-		return 0, nil
+	totalBytes, err = io.Copy(io.Discard, resp.Body)
+	if err != nil && totalBytes == 0 {
+		slog.Debug(fmt.Sprintf("totalBytes: %d, 读取数据时发生错误: %v", totalBytes, err))
+		return 0, err
 	}
 
 	// 计算下载时间（毫秒）

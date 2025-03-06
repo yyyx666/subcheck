@@ -16,7 +16,7 @@ import (
 	"github.com/beck-8/subs-check/utils"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gin-gonic/gin"
-	"github.com/goccy/go-yaml"
+	"gopkg.in/yaml.v3"
 )
 
 // App 结构体用于管理应用程序状态
@@ -198,9 +198,11 @@ func (app *App) checkProxies() error {
 		return fmt.Errorf("检测代理失败: %w", err)
 	}
 	// 将成功的节点添加到全局中，暂时内存保存
-	for _, result := range results {
-		if result.Proxy != nil {
-			config.GlobalProxies = append(config.GlobalProxies, result.Proxy)
+	if config.GlobalConfig.KeepSuccessProxies {
+		for _, result := range results {
+			if result.Proxy != nil {
+				config.GlobalProxies = append(config.GlobalProxies, result.Proxy)
+			}
 		}
 	}
 

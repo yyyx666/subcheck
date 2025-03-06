@@ -8,7 +8,7 @@ require (
 	github.com/metacubex/mihomo v1.19.3
 )
 
-require gopkg.in/yaml.v3 v3.0.1 // indirect
+require gopkg.in/yaml.v3 v3.0.1
 
 require (
 	github.com/3andne/restls-client-go v0.1.6 // indirect
