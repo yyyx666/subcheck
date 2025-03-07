@@ -266,6 +266,9 @@ func genUrls(data []byte) (*bytes.Buffer, error) {
 
 			// 将clash的参数转换为url的参数
 			conversion := func(k, v string) {
+				if v == "" {
+					return
+				}
 				switch k {
 				case "servername":
 					q.Set("sni", v)
