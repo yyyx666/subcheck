@@ -192,16 +192,16 @@ func (pc *ProxyChecker) checkProxy(proxy map[string]any) *Result {
 
 // updateProxyName 更新代理名称
 func (pc *ProxyChecker) updateProxyName(proxy map[string]any, speed int) {
-	// hy2协议 不知道为什么在被前边测速后就脏了，就不能用了，我也不知道为什么，奇葩。
-	// 可能底层mihomo的bug，什么泄露之类的，请求任何网址都超时。所以这里创新创建一个client
-	httpClient := CreateClient(proxy)
-	if httpClient == nil {
-		slog.Debug(fmt.Sprintf("创建updateProxyName代理Client失败: %v", proxy["name"]))
-		return
-	}
-	defer httpClient.Close()
 	// 以节点IP查询位置重命名节点
 	if config.GlobalConfig.RenameNode {
+		// hy2协议 不知道为什么在被前边测速后就脏了，就不能用了，我也不知道为什么，奇葩。
+		// 可能底层mihomo的bug，什么泄露之类的，请求任何网址都超时。所以这里创新创建一个client
+		httpClient := CreateClient(proxy)
+		if httpClient == nil {
+			slog.Debug(fmt.Sprintf("创建updateProxyName代理Client失败: %v", proxy["name"]))
+			return
+		}
+		defer httpClient.Close()
 		country := proxyutils.GetProxyCountry(httpClient.Client)
 		if country == "" {
 			country = "未识别"
@@ -315,8 +315,6 @@ func CreateClient(mapping map[string]any) *ProxyClient {
 // Close closes the proxy client and cleans up resources
 // 防止底层库有一些泄露，所以这里手动关闭
 func (pc *ProxyClient) Close() {
-	if transport, ok := pc.Transport.(*http.Transport); ok {
-		transport.CloseIdleConnections()
-	}
-	pc.Transport = nil
+	pc.CloseIdleConnections()
+	pc.Client = nil
 }
