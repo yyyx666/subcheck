@@ -94,6 +94,15 @@ func GetProxies() ([]map[string]any, error) {
 
 			for _, proxy := range proxyList {
 				if proxyMap, ok := proxy.(map[string]any); ok {
+					// 虽然支持mihomo支持下划线，但是这里为了规范，还是改成横杠
+					// todo: 不知道后边还有没有这类问题
+					switch proxyMap["type"] {
+					case "hysteria2", "hy2":
+						if _, ok := proxyMap["obfs_password"]; ok {
+							proxyMap["obfs-password"] = proxyMap["obfs_password"]
+							delete(proxyMap, "obfs_password")
+						}
+					}
 					proxyChan <- proxyMap
 				}
 			}
