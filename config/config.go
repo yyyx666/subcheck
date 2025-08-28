@@ -59,6 +59,7 @@ type Config struct {
 	GithubProxy          string   `yaml:"github-proxy"`
 	Proxy                string   `yaml:"proxy"`
 	CallbackScript       string   `yaml:"callback-script"`
+	BanCloudflareProxy   bool     `yaml:"ban-cloudflare-proxy"`
 }
 
 var GlobalConfig = &Config{
@@ -68,6 +69,7 @@ var GlobalConfig = &Config{
 	MihomoOverwriteUrl: "http://127.0.0.1:8199/sub/ACL4SSR_Online_Full.yaml",
 	Platforms:          []string{"openai", "youtube", "netflix", "disney", "gemini", "iprisk"},
 	DownloadMB:         20,
+	BanCloudflareProxy: true,
 }
 
 //go:embed config.example.yaml

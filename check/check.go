@@ -26,19 +26,20 @@ import (
 
 // Result 存储节点检测结果
 type Result struct {
-	Proxy      map[string]any
-	Openai     bool
-	OpenaiWeb  bool
-	Youtube    string
-	Netflix    bool
-	Google     bool
-	Cloudflare bool
-	Disney     bool
-	Gemini     bool
-	TikTok     string
-	IP         string
-	IPRisk     string
-	Country    string
+	Proxy        map[string]any
+	Openai       bool
+	OpenaiWeb    bool
+	Youtube      string
+	Netflix      bool
+	Google       bool
+	Cloudflare   bool
+	Disney       bool
+	Gemini       bool
+	TikTok       string
+	IP           string
+	IPRisk       string
+	Country      string
+	Organization string
 }
 
 // ProxyChecker 处理代理检测的主要结构体
@@ -245,12 +246,13 @@ func (pc *ProxyChecker) checkProxy(proxy map[string]any) *Result {
 					res.Gemini = true
 				}
 			case "iprisk":
-				country, ip := proxyutils.GetProxyCountry(httpClient.Client)
+				country, ip, organization := proxyutils.GetProxyCountry(httpClient.Client)
 				if ip == "" {
 					break
 				}
 				res.IP = ip
 				res.Country = country
+				res.Organization = organization
 				risk, err := platform.CheckIPRisk(httpClient.Client, ip)
 				if err == nil {
 					res.IPRisk = risk
@@ -267,6 +269,11 @@ func (pc *ProxyChecker) checkProxy(proxy map[string]any) *Result {
 	}
 	// 更新代理名称
 	pc.updateProxyName(res, httpClient, speed)
+
+	if config.GlobalConfig.BanCloudflareProxy && res.Organization != "" && strings.Contains(strings.ToLower(res.Organization), "cloudflare") {
+		return nil
+	}
+
 	pc.incrementAvailable()
 	return res
 }
@@ -278,7 +285,8 @@ func (pc *ProxyChecker) updateProxyName(res *Result, httpClient *ProxyClient, sp
 		if res.Country != "" {
 			res.Proxy["name"] = config.GlobalConfig.NodePrefix + proxyutils.Rename(res.Country)
 		} else {
-			country, _ := proxyutils.GetProxyCountry(httpClient.Client)
+			country, _, organization := proxyutils.GetProxyCountry(httpClient.Client)
+			res.Organization = organization
 			res.Proxy["name"] = config.GlobalConfig.NodePrefix + proxyutils.Rename(country)
 		}
 	}

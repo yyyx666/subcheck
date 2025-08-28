@@ -13,9 +13,9 @@ import (
 	"github.com/metacubex/mihomo/common/convert"
 )
 
-func GetProxyCountry(httpClient *http.Client) (loc string, ip string) {
+func GetProxyCountry(httpClient *http.Client) (loc string, ip string, organization string) {
 	for i := 0; i < config.GlobalConfig.SubUrlsReTry; i++ {
-		loc, ip = GetMe(httpClient)
+		loc, ip, organization = GetMe(httpClient)
 		if loc != "" && ip != "" {
 			return
 		}
@@ -28,7 +28,7 @@ func GetProxyCountry(httpClient *http.Client) (loc string, ip string) {
 			return
 		}
 		// 不准
-		loc, ip = GetEdgeOneProxy(httpClient)
+		loc, ip, organization = GetEdgeOneProxy(httpClient)
 		if loc != "" && ip != "" {
 			return
 		}
@@ -36,11 +36,12 @@ func GetProxyCountry(httpClient *http.Client) (loc string, ip string) {
 	return
 }
 
-func GetEdgeOneProxy(httpClient *http.Client) (loc string, ip string) {
+func GetEdgeOneProxy(httpClient *http.Client) (loc string, ip string, organization string) {
 	type GeoResponse struct {
 		Eo struct {
 			Geo struct {
 				CountryCodeAlpha2 string `json:"countryCodeAlpha2"`
+				Cisp              string `json:"cisp"`
 			} `json:"geo"`
 			ClientIp string `json:"clientIp"`
 		} `json:"eo"`
@@ -78,7 +79,7 @@ func GetEdgeOneProxy(httpClient *http.Client) (loc string, ip string) {
 		return
 	}
 
-	return eo.Eo.Geo.CountryCodeAlpha2, eo.Eo.ClientIp
+	return eo.Eo.Geo.CountryCodeAlpha2, eo.Eo.ClientIp, eo.Eo.Geo.Cisp
 }
 
 func GetCFProxy(httpClient *http.Client) (loc string, ip string) {
@@ -160,10 +161,11 @@ func GetIPLark(httpClient *http.Client) (loc string, ip string) {
 	return geo.Country, geo.IP
 }
 
-func GetMe(httpClient *http.Client) (loc string, ip string) {
+func GetMe(httpClient *http.Client) (loc string, ip string, organization string) {
 	type GeoIPData struct {
-		IP      string `json:"ip"`
-		Country string `json:"country_code"`
+		IP           string `json:"ip"`
+		Country      string `json:"country_code"`
+		Organization string `json:"organization"`
 	}
 
 	url := "https://ip.122911.xyz/api/ipinfo"
@@ -198,5 +200,5 @@ func GetMe(httpClient *http.Client) (loc string, ip string) {
 		return
 	}
 
-	return geo.Country, geo.IP
+	return geo.Country, geo.IP, geo.Organization
 }
