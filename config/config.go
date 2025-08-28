@@ -60,6 +60,7 @@ type Config struct {
 	Proxy                string   `yaml:"proxy"`
 	CallbackScript       string   `yaml:"callback-script"`
 	BanCloudflareProxy   bool     `yaml:"ban-cloudflare-proxy"`
+	BanShadowsocks       bool     `yaml:"ban-shadowsocks"`
 }
 
 var GlobalConfig = &Config{
@@ -70,6 +71,7 @@ var GlobalConfig = &Config{
 	Platforms:          []string{"openai", "youtube", "netflix", "disney", "gemini", "iprisk"},
 	DownloadMB:         20,
 	BanCloudflareProxy: true,
+	BanShadowsocks:     true,
 }
 
 //go:embed config.example.yaml

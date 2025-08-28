@@ -188,6 +188,10 @@ func (pc *ProxyChecker) checkProxy(proxy map[string]any) *Result {
 		Proxy: proxy,
 	}
 
+	if config.GlobalConfig.BanShadowsocks && proxy["type"].(string) == "ss" {
+		return nil
+	}
+
 	if os.Getenv("SUB_CHECK_SKIP") != "" {
 		// slog.Debug(fmt.Sprintf("跳过检测代理: %v", proxy["name"]))
 		return res
