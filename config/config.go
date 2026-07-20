@@ -71,7 +71,7 @@ var GlobalConfig = &Config{
 	Platforms:          []string{"openai", "youtube", "netflix", "disney", "gemini", "iprisk"},
 	DownloadMB:         20,
 	BanCloudflareProxy: true,
-	BanShadowsocks:     true,
+	BanShadowsocks:     false,
 }
 
 //go:embed config.example.yaml

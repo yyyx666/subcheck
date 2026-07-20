@@ -192,6 +192,12 @@ func (pc *ProxyChecker) checkProxy(proxy map[string]any) *Result {
 		return nil
 	}
 
+	// 入口特征：连接地址/SNI 含 workers.dev 直接丢弃（无需建连）
+	if config.GlobalConfig.BanCloudflareProxy && proxyutils.IsCloudflareWorkersProxy(proxy) {
+		slog.Debug("屏蔽 Cloudflare Workers 节点", "name", proxy["name"])
+		return nil
+	}
+
 	if os.Getenv("SUB_CHECK_SKIP") != "" {
 		// slog.Debug(fmt.Sprintf("跳过检测代理: %v", proxy["name"]))
 		return res
@@ -212,6 +218,15 @@ func (pc *ProxyChecker) checkProxy(proxy map[string]any) *Result {
 	google, err := platform.CheckGoogle(httpClient.Client)
 	if err != nil || !google {
 		return nil
+	}
+
+	// 出口归属：IP 落在 Cloudflare 官方网段或组织名含 cloudflare 则丢弃
+	if config.GlobalConfig.BanCloudflareProxy {
+		pc.fillProxyGeo(res, httpClient)
+		if proxyutils.IsCloudflareIP(res.IP) || proxyutils.IsCloudflareOrganization(res.Organization) {
+			slog.Debug("屏蔽 Cloudflare 出口节点", "name", proxy["name"], "ip", res.IP, "org", res.Organization)
+			return nil
+		}
 	}
 
 	var speed int
@@ -250,14 +265,14 @@ func (pc *ProxyChecker) checkProxy(proxy map[string]any) *Result {
 					res.Gemini = true
 				}
 			case "iprisk":
-				country, ip, organization := proxyutils.GetProxyCountry(httpClient.Client)
-				if ip == "" {
+				// 复用已查询的出口信息，避免重复请求
+				if res.IP == "" {
+					pc.fillProxyGeo(res, httpClient)
+				}
+				if res.IP == "" {
 					break
 				}
-				res.IP = ip
-				res.Country = country
-				res.Organization = organization
-				risk, err := platform.CheckIPRisk(httpClient.Client, ip)
+				risk, err := platform.CheckIPRisk(httpClient.Client, res.IP)
 				if err == nil {
 					res.IPRisk = risk
 				} else {
@@ -274,25 +289,35 @@ func (pc *ProxyChecker) checkProxy(proxy map[string]any) *Result {
 	// 更新代理名称
 	pc.updateProxyName(res, httpClient, speed)
 
-	if config.GlobalConfig.BanCloudflareProxy && res.Organization != "" && strings.Contains(strings.ToLower(res.Organization), "cloudflare") {
-		return nil
-	}
-
 	pc.incrementAvailable()
 	return res
+}
+
+// fillProxyGeo 查询并填充出口 IP / 国家 / 组织信息（已有则跳过）
+func (pc *ProxyChecker) fillProxyGeo(res *Result, httpClient *ProxyClient) {
+	if res.IP != "" && res.Country != "" {
+		return
+	}
+	country, ip, organization := proxyutils.GetProxyCountry(httpClient.Client)
+	if ip != "" {
+		res.IP = ip
+	}
+	if country != "" {
+		res.Country = country
+	}
+	if organization != "" {
+		res.Organization = organization
+	}
 }
 
 // updateProxyName 更新代理名称
 func (pc *ProxyChecker) updateProxyName(res *Result, httpClient *ProxyClient, speed int) {
 	// 以节点IP查询位置重命名节点
 	if config.GlobalConfig.RenameNode {
-		if res.Country != "" {
-			res.Proxy["name"] = config.GlobalConfig.NodePrefix + proxyutils.Rename(res.Country)
-		} else {
-			country, _, organization := proxyutils.GetProxyCountry(httpClient.Client)
-			res.Organization = organization
-			res.Proxy["name"] = config.GlobalConfig.NodePrefix + proxyutils.Rename(country)
+		if res.Country == "" {
+			pc.fillProxyGeo(res, httpClient)
 		}
+		res.Proxy["name"] = config.GlobalConfig.NodePrefix + proxyutils.Rename(res.Country)
 	}
 
 	name := res.Proxy["name"].(string)

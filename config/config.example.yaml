@@ -177,8 +177,14 @@ sub-urls-remote:
   # - https://example.com/sub-list.yaml
   # - https://raw.githubusercontent.com/beck-8/sub-urls/main/%E5%B0%8F%E8%80%8C%E7%BE%8E.txt
 
-#屏蔽cloudflare的节点
+# 屏蔽 Cloudflare 相关节点（默认开启），满足任一条件即丢弃：
+# 1) 出口组织名含 cloudflare
+# 2) 出口 IP 落在 Cloudflare 官方网段
+# 3) 节点 server / sni / servername / host 等含 workers.dev
 ban-cloudflare-proxy: true
+
+# 屏蔽 Shadowsocks (ss) 节点（默认关闭）
+ban-shadowsocks: false
 
 # 订阅地址 支持 clash/mihomo/v2ray/base64 格式的订阅链接
 # 如果用户想明确使用clash类型，那可以在支持的订阅链接结尾加上 &flag=clash.meta
