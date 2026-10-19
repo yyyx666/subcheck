@@ -3,8 +3,13 @@ package platform
 import (
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 )
+
+// The availability flag used to appear as the literal "45631641,null,true".
+// Google now embeds it in an escaped JSON map as \"45631641\":true/false.
+var geminiFlagRe = regexp.MustCompile(`45631641\\?"\s*:\s*(true|false)`)
 
 // https://github.com/clash-verge-rev/clash-verge-rev/blob/c894a15d13d5bcce518f8412cc393b56272a9afa/src-tauri/src/cmd/media_unlock_checker.rs#L241
 func CheckGemini(httpClient *http.Client) (bool, error) {
@@ -23,8 +28,12 @@ func CheckGemini(httpClient *http.Client) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if strings.Contains(string(body), "45631641,null,true") {
-		return true, nil
+	return geminiAvailable(body), nil
+}
+
+func geminiAvailable(body []byte) bool {
+	if match := geminiFlagRe.FindSubmatch(body); match != nil {
+		return string(match[1]) == "true"
 	}
-	return false, nil
+	return strings.Contains(string(body), "45631641,null,true")
 }
